@@ -4,15 +4,15 @@ import { getBlockMarkup } from './block';
 import { isList, getListMarkup } from './list';
 
 /**
-* The function will generate html markup for given draftjs editorContent.
+* The function will generate BBCode markup for given draftjs editorContent.
 */
-export default function draftToHtml(
+export default function draftToBBCode(
   editorContent: ContentState,
   hashtagConfig: Object,
   directional: boolean,
   customEntityTransform: Function
 ): string {
-  const html = [];
+  const BBCode = [];
   if (editorContent) {
     const { blocks, entityMap } = editorContent;
     if (blocks && blocks.length > 0) {
@@ -22,26 +22,26 @@ export default function draftToHtml(
           listBlocks.push(block);
         } else {
           if (listBlocks.length > 0) {
-            const listHtml = getListMarkup(listBlocks, entityMap, hashtagConfig, customEntityTransform);
-            html.push(listHtml);
+            const listBBCode = getListMarkup(listBlocks, entityMap, hashtagConfig, customEntityTransform);
+            BBCode.push(listBBCode);
             listBlocks = [];
           }
-          const blockHtml = getBlockMarkup(
+          const blockBBCode = getBlockMarkup(
             block,
             entityMap,
             hashtagConfig,
             directional,
             customEntityTransform,
           );
-          html.push(blockHtml);
+          BBCode.push(blockBBCode);
         }
       });
       if (listBlocks.length > 0) {
-        const listHtml = getListMarkup(listBlocks, entityMap, hashtagConfig,directional, customEntityTransform);
-        html.push(listHtml);
+        const listBBCode = getListMarkup(listBlocks, entityMap, hashtagConfig,directional, customEntityTransform);
+        BBCode.push(listBBCode);
         listBlocks = [];
       }
     }
   }
-  return html.join('');
+  return BBCode.join('');
 }

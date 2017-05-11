@@ -1,7 +1,7 @@
 import { forEach, isEmptyString } from './common';
 
 /**
-* Mapping block-type to corresponding html tag.
+* Mapping block-type to corresponding BBCode tag.
 */
 const blockTypesMapping: Object = {
   unstyled: '',
@@ -247,7 +247,7 @@ export function sameStyleAsPrevious(
 }
 
 /**
-* Function returns html for text depending on inline style tags applicable to it.
+* Function returns BBCode for text depending on inline style tags applicable to it.
 */
 export function addInlineStyleMarkup(style: string, content: string): string {
   if (style === 'BOLD') {
@@ -289,7 +289,7 @@ function getSectionText(text: Array<string>): string {
 }
 
 /**
-* Function returns html for text depending on inline style tags applicable to it.
+* Function returns BBCode for text depending on inline style tags applicable to it.
 */
 export function addStylePropertyMarkup(styles: Object, text: string): string {
   if (styles && (styles.COLOR || styles.BGCOLOR || styles.FONTSIZE || styles.FONTFAMILY)) {
@@ -327,9 +327,9 @@ function getEntityMarkup(
 ): string {
   const entity = entityMap[entityKey];
   if (typeof customEntityTransform === 'function') {
-    const html = customEntityTransform(entity, text);
-    if (html) {
-      return html;
+    const BBCode = customEntityTransform(entity, text);
+    if (BBCode) {
+      return BBCode;
     }
   }
   // if (entity.type === 'MENTION') {
@@ -473,7 +473,7 @@ export function getBlockInnerMarkup(
 }
 
 /**
-* Function will return html for the block.
+* Function will return BBCode for the block.
 */
 export function getBlockMarkup(
   block: Object,
@@ -482,9 +482,9 @@ export function getBlockMarkup(
   directional: boolean,
   customEntityTransform: Function,
 ): string {
-  const blockHtml = [];
+  const blockBBCode = [];
   if (isAtomicEntityBlock(block)) {
-    blockHtml.push(
+    blockBBCode.push(
       getEntityMarkup(
         entityMap,
         block.entityRanges[0].key,
@@ -494,26 +494,26 @@ export function getBlockMarkup(
   } else {
     const blockTag = getBlockTag(block.type);
     if (blockTag) {
-      blockHtml.push(`[${blockTag}]`);
+      blockBBCode.push(`[${blockTag}]`);
     }
 
     const { blockStyleStart, blockStyleEnd } = getBlockStyle(block.data);
     if (blockStyleStart) {
-      blockHtml.push(blockStyleStart);
+      blockBBCode.push(blockStyleStart);
     }
     // if (directional) {
-    //   blockHtml.push(' dir = "auto"');
+    //   blockBBCode.push(' dir = "auto"');
     // }
-    blockHtml.push(getBlockInnerMarkup(block, entityMap, hashtagConfig, customEntityTransform));
+    blockBBCode.push(getBlockInnerMarkup(block, entityMap, hashtagConfig, customEntityTransform));
 
     if (blockStyleEnd) {
-      blockHtml.push(blockStyleEnd);
+      blockBBCode.push(blockStyleEnd);
     }
 
     if (blockTag) {
-      blockHtml.push(`[/${blockTag}]`);
+      blockBBCode.push(`[/${blockTag}]`);
     }
   }
-  blockHtml.push('\n');
-  return blockHtml.join('');
+  blockBBCode.push('\n');
+  return blockBBCode.join('');
 }

@@ -22,7 +22,7 @@ function getBlockTagStart(type) {
 }
 
 /**
-* Function will return html markup for a list block.
+* Function will return BBCode markup for a list block.
 */
 export function getListMarkup(
   listBlocks: Array<Object>,
@@ -31,19 +31,19 @@ export function getListMarkup(
   directional: boolean,
   customEntityTransform: Function,
 ): string {
-  const listHtml = [];
+  const listBBCode = [];
   let nestedListBlock = [];
   let previousBlock;
   listBlocks.forEach((block) => {
     let nestedBlock = false;
     if (!previousBlock) {
-      listHtml.push(`[${getBlockTagStart(block.type)}]\n`);
+      listBBCode.push(`[${getBlockTagStart(block.type)}]\n`);
     } else if (previousBlock.type !== block.type) {
-      listHtml.push(`[/${getBlockTag(previousBlock.type)}]\n`);
-      listHtml.push(`[${getBlockTagStart(block.type)}]\n`);
+      listBBCode.push(`[/${getBlockTag(previousBlock.type)}]\n`);
+      listBBCode.push(`[${getBlockTagStart(block.type)}]\n`);
     } else if (previousBlock.depth === block.depth) {
       if (nestedListBlock && nestedListBlock.length > 0) {
-        listHtml.push(getListMarkup(
+        listBBCode.push(getListMarkup(
           nestedListBlock,
           entityMap,
           hashtagConfig,
@@ -57,27 +57,27 @@ export function getListMarkup(
       nestedListBlock.push(block);
     }
     if (!nestedBlock) {
-      listHtml.push('[*]');
+      listBBCode.push('[*]');
 
       const { blockStyleStart, blockStyleEnd } = getBlockStyle(block.data);
       if (blockStyleStart) {
-        listHtml.push(blockStyleStart);
+        listBBCode.push(blockStyleStart);
       }
       // if (directional) {
-      //   listHtml.push(' dir = "auto"');
+      //   listBBCode.push(' dir = "auto"');
       // }
-      listHtml.push(getBlockInnerMarkup(block, entityMap, hashtagConfig, customEntityTransform));
+      listBBCode.push(getBlockInnerMarkup(block, entityMap, hashtagConfig, customEntityTransform));
 
       if (blockStyleEnd) {
-        listHtml.push(blockStyleEnd);
+        listBBCode.push(blockStyleEnd);
       }
 
-      listHtml.push('\n');
+      listBBCode.push('\n');
       previousBlock = block;
     }
   });
   if (nestedListBlock && nestedListBlock.length > 0) {
-    listHtml.push(getListMarkup(
+    listBBCode.push(getListMarkup(
       nestedListBlock,
       entityMap,
       hashtagConfig,
@@ -85,6 +85,6 @@ export function getListMarkup(
       customEntityTransform,
     ));
   }
-  listHtml.push(`[/${getBlockTag(previousBlock.type)}]\n`);
-  return listHtml.join('');
+  listBBCode.push(`[/${getBlockTag(previousBlock.type)}]\n`);
+  return listBBCode.join('');
 }
