@@ -4,7 +4,7 @@ import draftToBBCode from '../index';
 
 describe('draftToBBCode test suite', () => {
   it('should return correct html', () => {
-    const html = '<p>testing</p>\n';
+    const html = 'testing\n';
     const arrContentBlocks = convertFromHTML(html);
     const contentState = ContentState.createFromBlockArray(arrContentBlocks);
     const result = draftToBBCode(convertToRaw(contentState));

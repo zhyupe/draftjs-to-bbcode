@@ -3,8 +3,6 @@
 import { assert } from 'chai';
 import {
   getBlockTag,
-  trimLeadingZeros,
-  trimTrailingZeros,
   getStylesAtOffset,
   sameStyleAsPrevious,
   addInlineStyleMarkup,
@@ -14,26 +12,8 @@ import {
 describe('getBlockTag test suite', () => {
   it('should return correct block tag when getBlockTag is called', () => {
     assert.equal(getBlockTag('header-one'), 'h1');
-    assert.equal(getBlockTag('unordered-list-item'), 'ul');
-    assert.equal(getBlockTag('unstyled'), 'p');
-  });
-});
-
-describe('trimLeadingZeros test suite', () => {
-  it('should correctly replace leading blank spaces', () => {
-    assert.equal(trimLeadingZeros('  testing'), '&nbsp;&nbsp;testing');
-    assert.equal(trimLeadingZeros('tes ting'), 'tes ting');
-    assert.equal(trimLeadingZeros('testing   '), 'testing   ');
-    assert.equal(trimLeadingZeros(''), '');
-  });
-});
-
-describe('trimTrailingZeros test suite', () => {
-  it('should correctly replace trailing blank spaces', () => {
-    assert.equal(trimTrailingZeros('  testing'), '  testing');
-    assert.equal(trimTrailingZeros('tes ting'), 'tes ting');
-    assert.equal(trimTrailingZeros('testing  '), 'testing&nbsp;&nbsp;');
-    assert.equal(trimTrailingZeros(''), '');
+    assert.equal(getBlockTag('unordered-list-item'), 'list');
+    assert.equal(getBlockTag('unstyled'), '');
   });
 });
 
