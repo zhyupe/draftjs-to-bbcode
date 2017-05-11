@@ -4,20 +4,20 @@ import { forEach, isEmptyString } from './common';
 * Mapping block-type to corresponding html tag.
 */
 const blockTypesMapping: Object = {
-  unstyled: 'p',
+  unstyled: '',
   'header-one': 'h1',
   'header-two': 'h2',
   'header-three': 'h3',
   'header-four': 'h4',
   'header-five': 'h5',
   'header-six': 'h6',
-  'unordered-list-item': 'ul',
-  'ordered-list-item': 'ol',
-  blockquote: 'blockquote',
+  'unordered-list-item': 'list',
+  'ordered-list-item': 'list',
+  blockquote: 'quote',
 };
 
 /**
-* Function will return HTML tag for a block.
+* Function will return BBCode tag for a block.
 */
 export function getBlockTag(type: string): string {
   return type && blockTypesMapping[type];
@@ -27,13 +27,21 @@ export function getBlockTag(type: string): string {
 * Function will return style string for a block.
 */
 export function getBlockStyle(data: Object): string {
-  let styles = '';
+  let blockStyleStart = '';
+  let blockStyleEnd = '';
   forEach(data, (key, value) => {
     if (value) {
-      styles += `${key}:${value};`;
+      switch (key) {
+        case 'text-align':
+          blockStyleStart += `[align=${value}]`;
+          blockStyleEnd = `[/align]${blockStyleEnd}`;
+          break;
+        default:
+          break;
+      }
     }
   });
-  return styles;
+  return { blockStyleStart, blockStyleEnd };
 }
 
 /**
@@ -86,7 +94,7 @@ function getHashtagRanges(blockText: string, hashtagConfig: Object): Array<Objec
 */
 function getSections(
   block: Object,
-  hashtagConfig: Object
+  hashtagConfig: Object,
 ): Array<Object> {
   const sections = [];
   let lastOffset = 0;
@@ -243,19 +251,19 @@ export function sameStyleAsPrevious(
 */
 export function addInlineStyleMarkup(style: string, content: string): string {
   if (style === 'BOLD') {
-    return `<strong>${content}</strong>`;
+    return `[b]${content}[/b]`;
   } else if (style === 'ITALIC') {
-    return `<em>${content}</em>`;
+    return `[i]${content}[/i]`;
   } else if (style === 'UNDERLINE') {
-    return `<ins>${content}</ins>`;
+    return `[u]${content}[/u]`;
   } else if (style === 'STRIKETHROUGH') {
-    return `<del>${content}</del>`;
+    return `[s]${content}[/s]`;
   } else if (style === 'CODE') {
-    return `<code>${content}</code>`;
+    return `[code]${content}[/code]`;
   } else if (style === 'SUPERSCRIPT') {
-    return `<sup>${content}</sup>`;
+    return `[sup]${content}[/sup]`;
   } else if (style === 'SUBSCRIPT') {
-    return `<sub>${content}</sub>`;
+    return `[sub]${content}[/sub]`;
   }
   return content;
 }
@@ -267,14 +275,10 @@ function getSectionText(text: Array<string>): string {
   if (text && text.length > 0) {
     const chars = text.map((ch) => {
       switch (ch) {
-        case '\n':
-          return '<br>\n';
-        case '&':
-          return '&amp;';
-        case '<':
-          return '&lt;';
-        case '>':
-          return '&gt;';
+        case '[':
+          return '&#91;';
+        case ']':
+          return '&#93;';
         default:
           return ch;
       }
@@ -289,21 +293,25 @@ function getSectionText(text: Array<string>): string {
 */
 export function addStylePropertyMarkup(styles: Object, text: string): string {
   if (styles && (styles.COLOR || styles.BGCOLOR || styles.FONTSIZE || styles.FONTFAMILY)) {
-    let styleString = 'style="';
+    let startString = '';
+    let endString = '';
     if (styles.COLOR) {
-      styleString += `color: ${styles.COLOR};`;
+      startString += `[color=${styles.COLOR}]`;
+      endString = `[/color]${endString}`;
     }
     if (styles.BGCOLOR) {
-      styleString += `background-color: ${styles.BGCOLOR};`;
+      startString += `[bgcolor=${styles.BGCOLOR}]`;
+      endString = `[/bgcolor]${endString}`;
     }
     if (styles.FONTSIZE) {
-      styleString += `font-size: ${styles.FONTSIZE}px;`;
+      startString += `[size=${styles.FONTSIZE}]`;
+      endString = `[/size]${endString}`;
     }
     if (styles.FONTFAMILY) {
-      styleString += `font-family: ${styles.FONTFAMILY};`;
+      startString += `[font=${styles.FONTFAMILY}]`;
+      endString = `[/font]${endString}`;
     }
-    styleString += '"';
-    return `<span ${styleString}>${text}</span>`;
+    return `${startString}${text}${endString}`;
   }
   return text;
 }
@@ -315,7 +323,7 @@ function getEntityMarkup(
   entityMap: Object,
   entityKey: number,
   text: string,
-  customEntityTransform: Function
+  customEntityTransform: Function,
 ): string {
   const entity = entityMap[entityKey];
   if (typeof customEntityTransform === 'function') {
@@ -324,19 +332,28 @@ function getEntityMarkup(
       return html;
     }
   }
-  if (entity.type === 'MENTION') {
-    return `<a href="${entity.data.url}" class="wysiwyg-mention" data-mention data-value="${entity.data.value}">${text}</a>`;
-  }
+  // if (entity.type === 'MENTION') {
+  //   return `<a href="${entity.data.url}" class="wysiwyg-mention" data-mention data-value="${entity.data.value}">${text}</a>`;
+  // }
   if (entity.type === 'LINK') {
-    const target = entity.data.target || '_self';
-    return `<a href="${entity.data.url}" target="${target}" >${text}</a>`;
+    if (entity.data.url === text) {
+      return `[url]${entity.data.url}[/url]`;
+    }
+    return `[url=${entity.data.url}]${text}[/url]`;
   }
   if (entity.type === 'IMAGE') {
-    return `<img src="${entity.data.src}" style="float:${entity.data.alignment || 'none'};height: ${entity.data.height};width: ${entity.data.width}"/>`;
+    let arg = '';
+    if (entity.data.height || entity.data.width) {
+      arg = `=${entity.data.width || 'auto'},${entity.data.height || 'auto'}`;
+    }
+    if (entity.data.alignment) {
+      return `[float=${entity.data.alignment}][img${arg}]${entity.data.src}[/img][/float]`;
+    }
+    return `[img${arg}]${entity.data.src}[/img]`;
   }
-  if (entity.type === 'EMBEDDED_LINK') {
-    return `<iframe width="${entity.data.width}" height="${entity.data.height}" src="${entity.data.src}" frameBorder="0"></iframe>`;
-  }
+  // if (entity.type === 'EMBEDDED_LINK') {
+  //   return `<iframe width="${entity.data.width}" height="${entity.data.height}" src="${entity.data.src}" frameBorder="0"></iframe>`;
+  // }
   return text;
 }
 
@@ -374,42 +391,6 @@ function getInlineStyleSections(
 }
 
 /**
-* Replace leading blank spaces by &nbsp;
-*/
-export function trimLeadingZeros(sectionText: string): string {
-  if (sectionText) {
-    let replacedText = sectionText;
-    for (let i = 0; i < replacedText.length; i += 1) {
-      if (sectionText[i] === ' ') {
-        replacedText = replacedText.replace(' ', '&nbsp;');
-      } else {
-        break;
-      }
-    }
-    return replacedText;
-  }
-  return sectionText;
-}
-
-/**
-* Replace trailing blank spaces by &nbsp;
-*/
-export function trimTrailingZeros(sectionText: string): string {
-  if (sectionText) {
-    let replacedText = sectionText;
-    for (let i = replacedText.length - 1; i >= 0; i -= 1) {
-      if (replacedText[i] === ' ') {
-        replacedText = `${replacedText.substring(0, i)}&nbsp;${replacedText.substring(i + 1)}`;
-      } else {
-        break;
-      }
-    }
-    return replacedText;
-  }
-  return sectionText;
-}
-
-/**
 * The method returns markup for section to which inline styles
 * like BOLD, ITALIC, UNDERLINE, STRIKETHROUGH, CODE, SUPERSCRIPT, SUBSCRIPT are applicable.
 */
@@ -435,7 +416,7 @@ function getInlineStyleSectionMarkup(block: Object, styleSection: Object): strin
   styleTagSections.forEach((stylePropertySection) => {
     styleSectionText += getStyleTagSectionMarkup(stylePropertySection);
   });
-  styleSectionText = addStylePropertyMarkup(styleSection.styles, styleSectionText)
+  styleSectionText = addStylePropertyMarkup(styleSection.styles, styleSectionText);
   return styleSectionText;
 }
 
@@ -448,7 +429,7 @@ function getSectionMarkup(
   block: Object,
   entityMap: Object,
   section: Object,
-  customEntityTransform: Function
+  customEntityTransform: Function,
   ): string {
   const entityInlineMarkup = [];
   const inlineStyleSections = getInlineStyleSections(
@@ -466,7 +447,7 @@ function getSectionMarkup(
       sectionText = getEntityMarkup(entityMap, section.entityKey, sectionText, customEntityTransform);
     }
   } else if (section.type === 'HASHTAG') {
-    sectionText = `<a href="${sectionText}" class="wysiwyg-hashtag">${sectionText}</a>`;
+    sectionText = `[tag]${sectionText}[/tag]`;
   }
   return sectionText;
 }
@@ -479,19 +460,13 @@ export function getBlockInnerMarkup(
   block: Object,
   entityMap: Object,
   hashtagConfig: Object,
-  customEntityTransform: Function
+  customEntityTransform: Function,
 ): string {
   const blockMarkup = [];
   const sections = getSections(block, hashtagConfig);
   sections.forEach((section, index) => {
-    let sectionText =
+    const sectionText =
       getSectionMarkup(block, entityMap, section, customEntityTransform);
-    if (index === 0) {
-      sectionText = trimLeadingZeros(sectionText);
-    }
-    if (index === sections.length - 1) {
-      sectionText = trimTrailingZeros(sectionText);
-    }
     blockMarkup.push(sectionText);
   });
   return blockMarkup.join('');
@@ -505,7 +480,7 @@ export function getBlockMarkup(
   entityMap: Object,
   hashtagConfig: Object,
   directional: boolean,
-  customEntityTransform: Function
+  customEntityTransform: Function,
 ): string {
   const blockHtml = [];
   if (isAtomicEntityBlock(block)) {
@@ -519,17 +494,24 @@ export function getBlockMarkup(
   } else {
     const blockTag = getBlockTag(block.type);
     if (blockTag) {
-      blockHtml.push(`<${blockTag}`);
-      const blockStyle = getBlockStyle(block.data);
-      if (blockStyle) {
-        blockHtml.push(` style="${blockStyle}"`);
-      }
-      if (directional) {
-        blockHtml.push(' dir = "auto"');
-      }
-      blockHtml.push('>');
-      blockHtml.push(getBlockInnerMarkup(block, entityMap, hashtagConfig, customEntityTransform));
-      blockHtml.push(`</${blockTag}>`);
+      blockHtml.push(`[${blockTag}]`);
+    }
+
+    const { blockStyleStart, blockStyleEnd } = getBlockStyle(block.data);
+    if (blockStyleStart) {
+      blockHtml.push(blockStyleStart);
+    }
+    // if (directional) {
+    //   blockHtml.push(' dir = "auto"');
+    // }
+    blockHtml.push(getBlockInnerMarkup(block, entityMap, hashtagConfig, customEntityTransform));
+
+    if (blockStyleEnd) {
+      blockHtml.push(blockStyleEnd);
+    }
+
+    if (blockTag) {
+      blockHtml.push(`[/${blockTag}]`);
     }
   }
   blockHtml.push('\n');
