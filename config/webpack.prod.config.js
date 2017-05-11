@@ -8,7 +8,7 @@ module.exports = {
   ],
   output: {
     path: path.join(__dirname, '../lib'),
-    filename: 'draftjs-to-html.js',
+    filename: 'draftjs-to-bbcode.js',
     libraryTarget: 'commonjs2',
   },
   plugins: [
