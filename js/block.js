@@ -249,21 +249,21 @@ export function sameStyleAsPrevious(
 /**
 * Function returns BBCode for text depending on inline style tags applicable to it.
 */
-export function addInlineStyleMarkup(style: string, content: string): string {
+export function applyInlineStyleMarkup(style: string, content: Object): string {
   if (style === 'BOLD') {
-    return `[b]${content}[/b]`;
+    content.tag.add('b');
   } else if (style === 'ITALIC') {
-    return `[i]${content}[/i]`;
+    content.tag.add('i');
   } else if (style === 'UNDERLINE') {
-    return `[u]${content}[/u]`;
+    content.tag.add('u');
   } else if (style === 'STRIKETHROUGH') {
-    return `[s]${content}[/s]`;
+    content.tag.add('s');
   } else if (style === 'CODE') {
-    return `[code]${content}[/code]`;
+    content.tag.add('code');
   } else if (style === 'SUPERSCRIPT') {
-    return `[sup]${content}[/sup]`;
+    content.tag.add('sup');
   } else if (style === 'SUBSCRIPT') {
-    return `[sub]${content}[/sub]`;
+    content.tag.add('sub');
   }
   return content;
 }
@@ -394,13 +394,138 @@ function getInlineStyleSections(
 * The method returns markup for section to which inline styles
 * like BOLD, ITALIC, UNDERLINE, STRIKETHROUGH, CODE, SUPERSCRIPT, SUBSCRIPT are applicable.
 */
-function getStyleTagSectionMarkup(styleSection: Object): string {
+function getStyleTagSectionTree(styleSection: Object): Object {
   const { styles, text } = styleSection;
-  let content = getSectionText(text);
+  let content = {
+    text: getSectionText(text),
+    tag: new Set(),
+  };
+
   forEach(styles, (style, value) => {
-    content = addInlineStyleMarkup(style, content, value);
+    content = applyInlineStyleMarkup(style, content, value);
   });
   return content;
+}
+
+function getStyleTagSectionMarkup(styleSections: Array<Object>): string {
+  function insertToTree(tree) {
+    let collector = [];
+    const map = {};
+    const end = tree.start + tree.length;
+
+    function checkUniqueTag(tagKey) {
+      let node = tree;
+      while (node) {
+        if (tagKey === node.name) return false;
+
+        node = node.parent;
+      }
+      return true;
+    }
+
+    function commitMap(tagKeys) {
+      tagKeys.forEach((tagKey) => {
+        if (checkUniqueTag(tagKey)) {
+          map[tagKey].name = tagKey;
+          map[tagKey].end = map[tagKey].start + map[tagKey].length;
+          collector.push(map[tagKey]);
+        }
+        delete map[tagKey];
+      });
+    }
+
+    styleSections.forEach((section, i) => {
+      if (i < tree.start || i >= end) return;
+      const mapTags = new Set(Object.keys(map));
+      section.tag.forEach((tag) => {
+        mapTags.delete(tag);
+
+        if (map[tag]) {
+          map[tag].length += 1;
+        } else {
+          map[tag] = { start: i, length: 1 };
+        }
+      });
+
+      commitMap(mapTags);
+    });
+
+    commitMap(Object.keys(map));
+
+    collector.sort((a, b) => {
+      if (a.length === b.length) {
+        return b.start - a.start;
+      }
+
+      return a.length - b.length;
+    });
+
+    let count = 0;
+    while (collector.length && count < tree.length) {
+      const tag = collector.pop();
+
+      count += tag.length;
+      tree.child.push(tag);
+      tag.parent = tree;
+      tag.child = [];
+
+      const newCollector = [];
+      collector.forEach((otherTag) => {
+        /* eslint no-param-reassign: 0 */
+        if (otherTag.start >= tag.start && otherTag.start < tag.end) {
+          otherTag.start = tag.end;
+        }
+        if (otherTag.end > tag.start && otherTag.end <= tag.end) {
+          otherTag.end = tag.start;
+        }
+
+        otherTag.length = otherTag.end - otherTag.start;
+
+        if (otherTag.length > 0) {
+          newCollector.push(otherTag);
+        }
+      });
+
+      collector = newCollector;
+      insertToTree(tag);
+    }
+
+    tree.child.sort((a, b) => a.start - b.start);
+  }
+
+  const root = {
+    start: 0,
+    length: styleSections.length,
+    end: styleSections.length,
+    parent: null,
+    child: [],
+  };
+
+  insertToTree(root);
+
+  let index = 0;
+  const render = (acc, cur) => {
+    while (index < cur.start) {
+      acc += styleSections[index].text;
+      index += 1;
+    }
+
+    let content;
+    if (cur.child.length) {
+      content = cur.child.reduce(render, '');
+    } else {
+      content = styleSections[index].text;
+      index += 1;
+    }
+
+    if (cur.name) {
+      return `${acc}[${cur.name}]${content}[/${cur.name}]`;
+    }
+
+    return acc + content;
+  };
+
+  return render('', root);
 }
 
 
@@ -412,10 +537,9 @@ function getInlineStyleSectionMarkup(block: Object, styleSection: Object): strin
   const styleTagSections = getInlineStyleSections(
     block, ['BOLD', 'ITALIC', 'UNDERLINE', 'STRIKETHROUGH', 'CODE', 'SUPERSCRIPT', 'SUBSCRIPT'], styleSection.start, styleSection.end,
   );
-  let styleSectionText = '';
-  styleTagSections.forEach((stylePropertySection) => {
-    styleSectionText += getStyleTagSectionMarkup(stylePropertySection);
-  });
+  const styleSections = styleTagSections.map(stylePropertySection => getStyleTagSectionTree(stylePropertySection));
+
+  let styleSectionText = getStyleTagSectionMarkup(styleSections);
   styleSectionText = addStylePropertyMarkup(styleSection.styles, styleSectionText);
   return styleSectionText;
 }

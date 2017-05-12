@@ -102,18 +102,18 @@ describe('sameStyleAsPrevious test suite', () => {
   });
 });
 
-describe('addInlineStyleMarkup test suite', () => {
-  let markup = addInlineStyleMarkup('BOLD', 'test');
-  assert.equal(markup, '[b]test[/b]');
-  markup = addInlineStyleMarkup('ITALIC', 'test');
-  assert.equal(markup, '[i]test[/i]');
-  markup = addInlineStyleMarkup('UNDERLINE', 'test');
-  assert.equal(markup, '[u]test[/u]');
-  markup = addInlineStyleMarkup('STRIKETHROUGH', 'test');
-  assert.equal(markup, '[s]test[/s]');
-  markup = addInlineStyleMarkup('CODE', 'test');
-  assert.equal(markup, '[code]test[/code]');
-});
+// describe('addInlineStyleMarkup test suite', () => {
+//   let markup = addInlineStyleMarkup('BOLD', 'test');
+//   assert.equal(markup, '[b]test[/b]');
+//   markup = addInlineStyleMarkup('ITALIC', 'test');
+//   assert.equal(markup, '[i]test[/i]');
+//   markup = addInlineStyleMarkup('UNDERLINE', 'test');
+//   assert.equal(markup, '[u]test[/u]');
+//   markup = addInlineStyleMarkup('STRIKETHROUGH', 'test');
+//   assert.equal(markup, '[s]test[/s]');
+//   markup = addInlineStyleMarkup('CODE', 'test');
+//   assert.equal(markup, '[code]test[/code]');
+// });
 
 describe('addStylePropertyMarkup test suite', () => {
   let markup = addStylePropertyMarkup(

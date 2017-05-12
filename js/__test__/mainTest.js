@@ -3,7 +3,7 @@ import { convertFromHTML, ContentState, convertToRaw } from 'draft-js';
 import draftToBBCode from '../index';
 
 describe('draftToBBCode test suite', () => {
-  it('should return correct html', () => {
+  it('should return correct bbcode', () => {
     const html = 'testing\n';
     const arrContentBlocks = convertFromHTML(html);
     const contentState = ContentState.createFromBlockArray(arrContentBlocks);
@@ -107,6 +107,22 @@ describe('draftToBBCode test suite', () => {
 
     html = '<blockquote>testing</blockquote>\n';
     output = '[quote]testing[/quote]\n';
+    arrContentBlocks = convertFromHTML(html);
+    contentState = ContentState.createFromBlockArray(arrContentBlocks);
+    result = draftToBBCode(convertToRaw(contentState));
+    assert.equal(output, result);
+  });
+
+  it('should return correct result for nested styles', () => {
+    let html = 'A<b>te</b><s><b>st</b>ing</s>\n';
+    let output = 'A[b]te[s]st[/s][/b][s]ing[/s]\n';
+    let arrContentBlocks = convertFromHTML(html);
+    let contentState = ContentState.createFromBlockArray(arrContentBlocks);
+    let result = draftToBBCode(convertToRaw(contentState));
+    assert.equal(output, result);
+
+    html = '<s>test<b>ing</b></s>\n';
+    output = '[s]test[b]ing[/b][/s]\n';
     arrContentBlocks = convertFromHTML(html);
     contentState = ContentState.createFromBlockArray(arrContentBlocks);
     result = draftToBBCode(convertToRaw(contentState));
