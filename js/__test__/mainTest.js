@@ -121,8 +121,8 @@ describe('draftToBBCode test suite', () => {
     let result = draftToBBCode(convertToRaw(contentState));
     assert.equal(output, result);
 
-    html = '<s>test<b>ing</b></s>\n';
-    output = '[s]test[b]ing[/b][/s]\n';
+    html = '<s>test<b>ing</b></s>.\n';
+    output = '[s]test[b]ing[/b][/s].\n';
     arrContentBlocks = convertFromHTML(html);
     contentState = ContentState.createFromBlockArray(arrContentBlocks);
     result = draftToBBCode(convertToRaw(contentState));

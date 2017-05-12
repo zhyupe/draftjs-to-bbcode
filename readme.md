@@ -2,9 +2,9 @@
 
 A library for converting DraftJS Editor content to BBCode.
 
-This is draft to BBCode library, migrated from [jpuri/draftjs-to-html](https://github.com/jpuri/draftjs-to-html), for the new TJUBBS(https://bbs.tju.edu.cn) (Currently under development).
+This is draft to BBCode library, migrated from [jpuri/draftjs-to-html](https://github.com/jpuri/draftjs-to-html), for the new [TJUBBS](https://bbs.tju.edu.cn) (Currently under development).
 
-Please notice that this library is developed specially for our own project. It doesn't strictly follow the official bbcode syntax. So there is no guarantee that the code it generates can be parsed by a random parser.
+Please notice that this library is specially developed for our own project. It doesn't strictly follow the official bbcode syntax. So there is no guarantee that the code it generates can be parsed by a random parser.
 
 ## Installing
 

@@ -525,7 +525,13 @@ function getStyleTagSectionMarkup(styleSections: Array<Object>): string {
     return acc + content;
   };
 
-  return render('', root);
+  let result = render('', root);
+  while (index < styleSections.length) {
+    result += styleSections[index].text;
+    index += 1;
+  }
+
+  return result;
 }
 
 
