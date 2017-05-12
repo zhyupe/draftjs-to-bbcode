@@ -127,5 +127,12 @@ describe('draftToBBCode test suite', () => {
     contentState = ContentState.createFromBlockArray(arrContentBlocks);
     result = draftToBBCode(convertToRaw(contentState));
     assert.equal(output, result);
+
+    html = '<s>te<b>st</b>ing</s>\n';
+    output = '[s]te[b]st[/b]ing[/s]\n';
+    arrContentBlocks = convertFromHTML(html);
+    contentState = ContentState.createFromBlockArray(arrContentBlocks);
+    result = draftToBBCode(convertToRaw(contentState));
+    assert.equal(output, result);
   });
 });

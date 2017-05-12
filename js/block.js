@@ -510,11 +510,13 @@ function getStyleTagSectionMarkup(styleSections: Array<Object>): string {
       index += 1;
     }
 
-    let content;
+    let content = '';
     if (cur.child.length) {
       content = cur.child.reduce(render, '');
-    } else {
-      content = styleSections[index].text;
+    }
+
+    while (index < cur.end) {
+      content += styleSections[index].text;
       index += 1;
     }
 
